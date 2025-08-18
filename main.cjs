@@ -49,7 +49,7 @@ function createWindow() {
         // win.webContents.openDevTools(); // Open DevTools
         win.webContents.reloadIgnoringCache(); // Force reload
     } else {
-        win.loadFile(path.join(__dirname, 'index.html'));
+        win.loadFile(path.join(__dirname, 'dist', 'index.html'));
     }
 }
 
