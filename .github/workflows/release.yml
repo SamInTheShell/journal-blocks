@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version (leave empty for auto YYYY.MM.DDHHSS)'
+        required: false
+        type: string
+
+jobs:
+  generate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Generate version
+      id: version
+      run: |
+        if [ -n "${{ github.event.inputs.version }}" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+          npm run set-version "$VERSION"
+        else
+          npm run set-version
+          VERSION=$(node -p "require('./package.json').version")
+        fi
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "Generated version: $VERSION"
+
+  build:
+    needs: generate-version
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: windows-latest
+            platform: win
+            arch: x64
+          - os: macos-latest
+            platform: mac
+            arch: universal
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Set version
+      run: npm run set-version "${{ needs.generate-version.outputs.version }}"
+
+    - name: Build application
+      run: npm run build
+
+    - name: Build Electron app
+      run: npm run build:${{ matrix.platform }}
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.platform }}-${{ matrix.arch }}
+        path: |
+          dist-electron/*.exe
+          dist-electron/*.dmg
+          dist-electron/*.zip
+          dist-electron/*.AppImage
+          dist-electron/*.tar.gz
+          dist-electron/*.deb
+          dist-electron/*.rpm
+        retention-days: 90
+
+  release:
+    needs: [generate-version, build]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Display structure of downloaded files
+      run: ls -la artifacts/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ needs.generate-version.outputs.version }}
+        name: Release v${{ needs.generate-version.outputs.version }}
+        body: |
+          ## Journal Blocks v${{ needs.generate-version.outputs.version }}
+          
+          **Release Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Downloads
+          - **Windows (x64):** `.exe` installer
+          - **macOS (Universal):** `.dmg` disk image (Intel + Apple Silicon)
+          - **Linux (x64):** `.AppImage` portable application
+          
+          ### Installation
+          - **Windows:** Download and run the `.exe` installer
+          - **macOS:** Download the `.dmg`, mount it, and drag Journal Blocks to Applications
+          - **Linux:** Download the `.AppImage`, make it executable, and run it
+          
+          ---
+          *This is an automated release build.*
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/**/*.exe
+          artifacts/**/*.dmg
+          artifacts/**/*.AppImage
+        token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,114 @@
+{
+  "name": "journal-blocks",
+  "productName": "Journal Blocks",
+  "private": true,
+  "version": "2025.08.180401",
+  "type": "module",
+  "main": "main.cjs",
+  "description": "A structured note-taking application with hierarchical organization",
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail \"vite\" \"NODE_ENV=development electron main.cjs\"",
+    "dev:vite": "vite",
+    "dev:electron": "NODE_ENV=development electron main.cjs",
+    "dev:manual": "echo 'Run npm run dev:vite in one terminal and npm run dev:electron in another'",
+    "build": "tsc -b && vite build",
+    "build:electron": "npm run build && electron-builder",
+    "build:electron:dir": "npm run build && electron-builder --dir",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux",
+    "set-version": "node scripts/set-version.js",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "electron": "electron main.cjs",
+    "postinstall": "electron-builder install-app-deps || true"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@blocknote/core": "^0.35.0",
+    "@blocknote/mantine": "^0.35.0",
+    "@blocknote/react": "^0.35.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@eslint/js": "^9.33.0",
+    "@fontsource/roboto": "^5.2.6",
+    "@mui/icons-material": "^7.3.1",
+    "@mui/material": "^7.3.1",
+    "@mui/x-tree-view": "^7.11.1",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.6",
+    "electron-builder": "^25.1.8",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.3.0",
+    "react-router-dom": "^7.8.0",
+    "typescript": "~5.8.3",
+    "typescript-eslint": "^8.39.1",
+    "vite": "^7.1.2"
+  },
+  "build": {
+    "appId": "com.journalblocks.app",
+    "productName": "Journal Blocks",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "public/preload.cjs",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "default",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Office",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "samintheshell",
+      "repo": "journal-blocks"
+    }
+  }
+}
