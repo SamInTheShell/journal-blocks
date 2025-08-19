@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Box, Alert } from '@mui/material';
 import { type PartialBlock } from '@blocknote/core';
-import { useCreateBlockNote } from '@blocknote/react';
+import { useBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
@@ -37,7 +37,7 @@ export default function JournalEditor({ entryId }: JournalEditorProps) {
   }, [state.currentJournal, entryId]);
 
   // Create stable BlockNote editor with proper initial content
-  const editor = useCreateBlockNote({
+  const editor = useBlockNote({
     initialContent: [
       {
         type: "paragraph",
@@ -138,6 +138,11 @@ export default function JournalEditor({ entryId }: JournalEditorProps) {
           editor={editor}
           onChange={handleContentChange}
           theme="dark"
+          editable={true}
+          onContextMenu={(event: React.MouseEvent) => {
+            event.preventDefault();
+            editor.openSuggestionMenu("/");
+          }}
         />
       </Box>
     </Box>
