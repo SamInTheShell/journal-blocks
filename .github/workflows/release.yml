@@ -31,6 +31,13 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Fix Rollup dependencies (Linux)
+      run: |
+        npm rebuild rollup
+        npm install @rollup/rollup-linux-x64-gnu
+        npm cache clean --force
+        npm ci
+
     - name: Generate version
       id: version
       run: |
@@ -46,58 +53,11 @@ jobs:
 
   build:
     needs: generate-version
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
-          - os: windows-latest
-            platform: win
-            arch: x64
-          - os: macos-latest
-            platform: mac
-            arch: universal
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
-
-    - name: Set version
-      run: npm run set-version "${{ needs.generate-version.outputs.version }}"
-
-    - name: Build application
-      run: npm run build
-
-    - name: Build Electron app
-      run: npm run build:${{ matrix.platform }}
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ matrix.platform }}-${{ matrix.arch }}
-        path: |
-          dist-electron/*.exe
-          dist-electron/*.dmg
-          dist-electron/*.zip
-          dist-electron/*.AppImage
-          dist-electron/*.tar.gz
-          dist-electron/*.deb
-          dist-electron/*.rpm
-        retention-days: 90
+    uses: ./.github/workflows/build-app.yml
+    with:
+      version: ${{ needs.generate-version.outputs.version }}
+    secrets:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     needs: [generate-version, build]
