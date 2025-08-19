@@ -60,56 +60,39 @@ jobs:
 
     - name: Fix Rollup dependencies (Mac)
       if: matrix.os == 'macos-latest'
-      run: node -e "
-        const arch = process.arch;
-        console.log('Detected architecture:', arch);
-        
-        require('child_process').execSync('npm rebuild rollup', {stdio: 'inherit'});
-        
-        if (arch === 'arm64') {
-          console.log('Installing ARM64 version for Mac');
-          require('child_process').execSync('npm install @rollup/rollup-darwin-arm64', {stdio: 'inherit'});
-        } else {
-          console.log('Installing x64 version for Mac');
-          require('child_process').execSync('npm install @rollup/rollup-darwin-x64', {stdio: 'inherit'});
-        }
-        
-        require('child_process').execSync('npm cache clean --force', {stdio: 'inherit'});
-        require('child_process').execSync('npm ci', {stdio: 'inherit'});
-      "
+      shell: bash
+      run: |
+        npm rebuild rollup
+        echo "Detected architecture: $(node -e "console.log(process.arch)")"
+        if node -e "console.log(process.arch)" | grep -q "arm64"; then
+          echo "Installing ARM64 version for Mac"
+          npm install @rollup/rollup-darwin-arm64
+        else
+          echo "Installing x64 version for Mac"
+          npm install @rollup/rollup-darwin-x64
+        fi
+        npm cache clean --force
+        npm ci
 
     - name: Set version
-      run: node -e "
-        const version = '${{ inputs.version }}';
-        if (version && version.trim()) {
-          require('child_process').execSync('npm run set-version \"' + version + '\"', {stdio: 'inherit'});
-        } else {
-          require('child_process').execSync('npm run set-version', {stdio: 'inherit'});
-        }
-      "
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          npm run set-version "${{ inputs.version }}"
+        else
+          npm run set-version
+        fi
 
     - name: Build application
-      run: node -e "
-        try {
-          require('child_process').execSync('npm run build', {stdio: 'inherit'});
-        } catch (error) {
-          console.log('Standard build failed, trying alternative approach...');
-          
-          // Remove node_modules and package-lock.json (cross-platform)
-          const fs = require('fs');
-          const path = require('path');
-          
-          if (fs.existsSync('node_modules')) {
-            fs.rmSync('node_modules', {recursive: true, force: true});
-          }
-          if (fs.existsSync('package-lock.json')) {
-            fs.unlinkSync('package-lock.json');
-          }
-          
-          require('child_process').execSync('npm install', {stdio: 'inherit'});
-          require('child_process').execSync('npm run build', {stdio: 'inherit'});
+      shell: bash
+      run: |
+        # Try standard build first
+        npm run build || {
+          echo "Standard build failed, trying alternative approach..."
+          rm -rf node_modules package-lock.json
+          npm install
+          npm run build
         }
-      "
       env:
         # Force npm to use the correct platform for optional dependencies
         npm_config_platform: ${{ matrix.platform }}
