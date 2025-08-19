@@ -1,11 +1,20 @@
 import path from "path"
+import fs from "fs"
 
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// Read version from package.json
+const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'))
+
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
     plugins: [react()],
+    define: {
+        'import.meta.env.VITE_APP_VERSION': JSON.stringify(
+            mode === 'development' ? '2003.10.13200000' : packageJson.version
+        ),
+    },
     base: './', // Use relative paths for assets so Electron can load them
     resolve: {
         alias: {
@@ -24,4 +33,4 @@ export default defineConfig({
             },
         },
     },
-})
+}))

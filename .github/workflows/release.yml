@@ -112,6 +112,10 @@ jobs:
     - name: Display structure of downloaded files
       run: ls -la artifacts/
 
+    - name: Get current date
+      id: date
+      run: echo "date=$(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
@@ -120,7 +124,7 @@ jobs:
         body: |
           ## Journal Blocks v${{ needs.generate-version.outputs.version }}
           
-          **Release Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          **Release Date:** ${{ steps.date.outputs.date }}
           
           ### Downloads
           - **Windows (x64):** `.exe` installer

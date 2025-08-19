@@ -15,6 +15,8 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Link,
+  Chip,
 } from '@mui/material';
 import {
   Book as BookIcon,
@@ -24,9 +26,11 @@ import {
   MoreVert as MoreVertIcon,
   Delete as DeleteIcon,
   Clear as ClearIcon,
+  Update as UpdateIcon,
 } from '@mui/icons-material';
 import { useJournal } from '../../hooks/useJournal';
 import { useNavigate } from 'react-router-dom';
+import { useVersionChecker } from '../../hooks/useVersionChecker';
 
 interface ContextMenuState {
   mouseX: number;
@@ -38,6 +42,7 @@ export default function WelcomePage() {
   const { state, openJournal, createJournal, loadRecentFiles, deleteRecentFile, clearRecentFiles } = useJournal();
   const navigate = useNavigate();
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const { versionInfo, getCurrentVersion } = useVersionChecker();
 
   useEffect(() => {
     loadRecentFiles();
@@ -137,6 +142,48 @@ export default function WelcomePage() {
         borderRadius: 3,
         boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
       }}>
+        {/* Top Row: Version Info and Update Notification */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 2 
+        }}>
+          {/* Version Debug Info - Top Left */}
+          <Typography variant="caption" color="text.disabled">
+            v{getCurrentVersion()}
+            {import.meta.env.DEV && ' (Dev)'}
+          </Typography>
+          
+          {/* Update Notification - Top Right */}
+          {versionInfo?.hasUpdate && (
+            <Link
+              href={versionInfo.releaseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              sx={{ textDecoration: 'none' }}
+            >
+              <Chip
+                icon={<UpdateIcon />}
+                label={`Update available: ${versionInfo.latestVersion}`}
+                variant="outlined"
+                color="primary"
+                clickable
+                size="small"
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '& .MuiChip-icon': {
+                      color: 'inherit',
+                    },
+                  },
+                }}
+              />
+            </Link>
+          )}
+        </Box>
+
         {/* Header */}
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <BookIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
