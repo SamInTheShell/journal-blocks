@@ -59,7 +59,16 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         npm rebuild rollup
-        npm install @rollup/rollup-darwin-x64
+        # Log architecture for debugging
+        echo "Detected architecture: $(node -e "console.log(process.arch)")"
+        # Install the correct architecture for Mac using Node.js detection
+        if node -e "console.log(process.arch)" | grep -q "arm64"; then
+          echo "Installing ARM64 version for Mac"
+          npm install @rollup/rollup-darwin-arm64
+        else
+          echo "Installing x64 version for Mac"
+          npm install @rollup/rollup-darwin-x64
+        fi
         npm cache clean --force
         npm ci
 
