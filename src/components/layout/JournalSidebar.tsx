@@ -28,9 +28,11 @@ import {
   FileDownload as ExportIcon,
   CreateNewFolder as NewFolderIcon,
   NoteAdd as NewEntryIcon,
+  Clear as ClearIcon,
 } from '@mui/icons-material';
 import { useJournal } from '../../hooks/useJournal';
-import type { JournalItem, JournalEntry } from '../../types/journal';
+import type { JournalItem, JournalEntry, JournalFolder } from '../../types/journal';
+import SearchBar from './SearchBar';
 
 interface ContextMenuState {
   mouseX: number;
@@ -71,6 +73,7 @@ export default function JournalSidebar() {
   const [inputValue, setInputValue] = useState('');
   const [isResizing, setIsResizing] = useState(false);
   const [dragState, setDragState] = useState<DragState>({ draggedItem: null, draggedOver: null });
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleContextMenu = (event: React.MouseEvent, item: JournalItem) => {
     event.preventDefault();
@@ -135,6 +138,8 @@ export default function JournalSidebar() {
     setSelectedFolder(folderId);
   };
 
+
+
   // Get expanded folder IDs from journal data
   const getExpandedItems = useCallback((items: JournalItem[]): string[] => {
     const expanded: string[] = [];
@@ -151,6 +156,51 @@ export default function JournalSidebar() {
     traverseItems(items);
     return expanded;
   }, []);
+
+  // Filter tree items based on search query
+  const filterTreeItems = useCallback((items: JournalItem[]): JournalItem[] => {
+    if (!searchQuery.trim()) return items;
+
+    const searchTerm = searchQuery.toLowerCase();
+    
+    const filterItem = (item: JournalItem): JournalItem | null => {
+      // Check if this item matches the search
+      const nameMatches = item.name.toLowerCase().includes(searchTerm);
+      
+      if (item.type === 'entry') {
+        // For entries, also check content
+        const entry = item as JournalEntry;
+        let contentMatches = false;
+        if (entry.content) {
+          const contentStr = JSON.stringify(entry.content).toLowerCase();
+          contentMatches = contentStr.includes(searchTerm);
+        }
+        
+        if (nameMatches || contentMatches) {
+          return item;
+        }
+      } else if (item.type === 'folder') {
+        // For folders, check if any children match
+        const folder = item as JournalFolder;
+        const filteredChildren = folder.children
+          .map(filterItem)
+          .filter((child): child is JournalItem => child !== null);
+        
+        if (nameMatches || filteredChildren.length > 0) {
+          return {
+            ...folder,
+            children: filteredChildren,
+          };
+        }
+      }
+      
+      return null;
+    };
+
+    return items
+      .map(filterItem)
+      .filter((item): item is JournalItem => item !== null);
+  }, [searchQuery]);
 
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, item: JournalItem) => {
@@ -398,6 +448,8 @@ export default function JournalSidebar() {
           </Box>
         </Box>
 
+
+
         {/* Tree View */}
         <Box 
           sx={{ flex: 1, overflow: 'auto', p: 1 }}
@@ -423,35 +475,69 @@ export default function JournalSidebar() {
             setDragState({ draggedItem: null, draggedOver: null });
           }}
         >
-          {state.currentJournal.structure.children.length === 0 ? (
-            <Box sx={{ 
-              p: 2, 
-              textAlign: 'center', 
-              color: 'text.secondary',
-              minHeight: '200px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: dragState.draggedOver === 'root' ? 'rgba(144, 202, 249, 0.1)' : 'transparent',
-              borderRadius: 1,
-              border: dragState.draggedOver === 'root' ? '2px dashed rgba(144, 202, 249, 0.5)' : '2px dashed transparent',
-              transition: 'all 0.2s ease',
-            }}>
-              <Typography variant="body2" gutterBottom>
-                {dragState.draggedItem ? 'Drop here to move to root' : 'No entries yet'}
-              </Typography>
-              {!dragState.draggedItem && (
-                <Button
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => handleOpenDialog('newEntry')}
-                >
-                  Create your first entry
-                </Button>
-              )}
-            </Box>
-          ) : (
+          {(() => {
+            const filteredItems = filterTreeItems(state.currentJournal.structure.children);
+            const hasItems = state.currentJournal.structure.children.length > 0;
+            const hasFilteredItems = filteredItems.length > 0;
+            
+            if (searchQuery.trim() && !hasFilteredItems) {
+              return (
+                <Box sx={{ 
+                  p: 2, 
+                  textAlign: 'center', 
+                  color: 'text.secondary',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  <Typography variant="body2" gutterBottom>
+                    No results found for "{searchQuery}"
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear search
+                  </Button>
+                </Box>
+              );
+            }
+            
+            if (!hasItems) {
+              return (
+                <Box sx={{ 
+                  p: 2, 
+                  textAlign: 'center', 
+                  color: 'text.secondary',
+                  minHeight: '200px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: dragState.draggedOver === 'root' ? 'rgba(144, 202, 249, 0.1)' : 'transparent',
+                  borderRadius: 1,
+                  border: dragState.draggedOver === 'root' ? '2px dashed rgba(144, 202, 249, 0.5)' : '2px dashed transparent',
+                  transition: 'all 0.2s ease',
+                }}>
+                  <Typography variant="body2" gutterBottom>
+                    {dragState.draggedItem ? 'Drop here to move to root' : 'No entries yet'}
+                  </Typography>
+                  {!dragState.draggedItem && (
+                    <Button
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() => handleOpenDialog('newEntry')}
+                    >
+                      Create your first entry
+                    </Button>
+                  )}
+                </Box>
+              );
+            }
+            
+            return (
             <Box sx={{
               backgroundColor: dragState.draggedOver === 'root' ? 'rgba(144, 202, 249, 0.1)' : 'transparent',
               borderRadius: 1,
@@ -478,7 +564,7 @@ export default function JournalSidebar() {
                   }
                 }}
               >
-                {renderTreeItems(state.currentJournal.structure.children)}
+                {renderTreeItems(filterTreeItems(state.currentJournal.structure.children))}
               </SimpleTreeView>
               
               {/* Drop zone for root level */}
@@ -504,7 +590,46 @@ export default function JournalSidebar() {
                 )}
               </Box>
             </Box>
-          )}
+            );
+          })()}
+        </Box>
+
+        {/* Search Status */}
+        {searchQuery.trim() && (
+          <Box sx={{ 
+            p: 2, 
+            borderTop: 1, 
+            borderColor: 'divider', 
+            backgroundColor: 'background.paper',
+            borderBottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <Typography variant="caption" color="text.secondary">
+              Showing {filterTreeItems(state.currentJournal.structure.children).length} results for "{searchQuery}"
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+            >
+              <ClearIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )}
+
+        {/* Search Bar */}
+        <Box sx={{ 
+          p: 2, 
+          borderTop: searchQuery.trim() ? 0 : 1, 
+          borderColor: 'divider', 
+          backgroundColor: 'background.paper' 
+        }}>
+          <SearchBar 
+            onSearchChange={setSearchQuery} 
+            searchQuery={searchQuery} 
+          />
         </Box>
 
         {/* Resize Handle */}
