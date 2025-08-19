@@ -98,8 +98,8 @@ export default function JournalTabs() {
             <Box sx={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 16px' }}>
               <kbd>Ctrl + Tab</kbd> <span>Next tab</span>
               <kbd>Ctrl + Shift + Tab</kbd> <span>Previous tab</span>
-              <kbd>Cmd + ]</kbd> <span>Next tab (Mac)</span>
-              <kbd>Cmd + [</kbd> <span>Previous tab (Mac)</span>
+              <kbd>Cmd + Shift + ]</kbd> <span>Next tab (Mac)</span>
+              <kbd>Cmd + Shift + [</kbd> <span>Previous tab (Mac)</span>
               <kbd>Ctrl/Cmd + W</kbd> <span>Close tab</span>
             </Box>
           </Typography>
