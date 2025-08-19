@@ -36,27 +36,37 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
-    - name: Install dependencies (Linux)
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Fix Rollup dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: |
-        npm ci
-        # Fix Rollup optional dependencies issue on Linux
         npm rebuild rollup
-        # Also try to install the specific platform dependency
         npm install @rollup/rollup-linux-x64-gnu
-        # Clear npm cache and reinstall if still having issues
         npm cache clean --force
         npm ci
 
-    - name: Install dependencies (Windows/Mac)
-      if: matrix.os != 'ubuntu-latest'
-      run: npm ci
+    - name: Fix Rollup dependencies (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        npm rebuild rollup
+        npm install @rollup/rollup-win32-x64-msvc
+        npm cache clean --force
+        npm ci
+
+    - name: Fix Rollup dependencies (Mac)
+      if: matrix.os == 'macos-latest'
+      run: |
+        npm rebuild rollup
+        npm install @rollup/rollup-darwin-x64
+        npm cache clean --force
+        npm ci
 
     - name: Set version (timestamp-based)
       run: npm run set-version
 
-    - name: Build application (Linux)
-      if: matrix.os == 'ubuntu-latest'
+    - name: Build application
       run: |
         # Try standard build first
         npm run build || {
@@ -69,10 +79,6 @@ jobs:
         # Force npm to use the correct platform for optional dependencies
         npm_config_platform: ${{ matrix.platform }}
         npm_config_arch: x64
-
-    - name: Build application (Windows/Mac)
-      if: matrix.os != 'ubuntu-latest'
-      run: npm run build
 
     - name: Build Electron app
       run: npm run build:${{ matrix.platform }}
