@@ -176,7 +176,7 @@ export default function JournalTabs() {
       </Paper>
 
       {/* Tab Content */}
-      <Box sx={{ flex: 1 }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         {openTabs.map((tab) => (
           <Box
             key={tab.id}

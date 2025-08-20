@@ -133,7 +133,7 @@ export default function JournalEditor({ entryId }: JournalEditorProps) {
       height: '100%',
     }}>
       {/* Editor */}
-      <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <Box sx={{ flex: 1, position: 'relative', overflow: 'auto' }}>
         <BlockNoteView
           editor={editor}
           onChange={handleContentChange}
