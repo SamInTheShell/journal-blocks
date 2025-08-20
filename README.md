@@ -72,3 +72,23 @@ Make sure the Vite dev server is running first before starting Electron. The Ele
   - `components/` - React components
   - `context/` - State management
   - `types/` - TypeScript interfaces
+
+## Installation Notes
+### MacOS
+At this time, the Journal Blocks app is not signed on MacOS.
+
+You can skip going to the security settings by just running the following command in `Terminal.app` after you install it.
+```bash
+xattr -d com.apple.quarantine "/Applications/Journal Blocks.app"
+```
+
+Otherwise, what happens on open is you will be prompted with the following and be forced to select `Done`.
+```
+"Journal Blocks" Not Opened
+```
+
+After the app is blocked, you can go into `Settings > Privacy & Security`.
+
+Scroll down to `“Journal Blocks” was blocked to protect your Mac.`.
+
+Click the "Open Anyway" button.
